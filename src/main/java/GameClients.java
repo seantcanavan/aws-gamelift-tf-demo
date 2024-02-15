@@ -15,4 +15,8 @@ public class GameClients {
       clients.add(newClient);
     }
   }
+
+  public List<GameClient> getClients() {
+    return clients;
+  }
 }
