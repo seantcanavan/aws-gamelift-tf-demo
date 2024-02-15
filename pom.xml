@@ -67,6 +67,10 @@
                 </version>
                 <configuration>
                     <release>21</release>
+                    <generatedSourcesDirectory>${project.build.directory}/generated-sources/protobuf
+                    </generatedSourcesDirectory>
+                    <generatedSourcesDirectory>${project.build.directory}/generated-sources/annotations
+                    </generatedSourcesDirectory>
                 </configuration>
             </plugin>
             <plugin>
