@@ -3,16 +3,17 @@ import game.GameService.GameState;
 import game.GameStateServiceGrpc;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public class GameServer {
+public class GameServer extends LoggableState {
   private io.grpc.Server grpcServer;
   public static final int PORT = 50051; // Example port number
   private static final Logger logger = LoggerFactory.getLogger(GameServer.class);
@@ -24,7 +25,9 @@ public class GameServer {
   private final Map<Integer, StreamObserver<GameState>> playerStateStreams =
       Collections.synchronizedMap(new HashMap<>(GameServerAndGameClients.MAX_PLAYERS));
 
-  /** A map of all of every individual player's state key'd off of the player's number. */
+  /**
+   * A map of all of every individual player's state key'd off of the player's number.
+   */
   private final Map<Integer, GameService.PlayerState> playerStates =
       Collections.synchronizedMap(new HashMap<>(GameServerAndGameClients.MAX_PLAYERS));
 
@@ -54,6 +57,11 @@ public class GameServer {
       GameService.PlayerState.newBuilder().setNumber(9).setConnected(false).build();
   private GameService.PlayerState Player10State =
       GameService.PlayerState.newBuilder().setNumber(10).setConnected(false).build();
+
+  public GameServer() {
+    this.type = "SERVER";
+    this.playerNumber = 0;
+  }
 
   public static void main(String[] args) throws IOException, InterruptedException {
     logger.info("[SERVER] main() called");
