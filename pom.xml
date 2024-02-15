@@ -43,7 +43,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.1.1</version>
                 <configuration>
-                    <mainClass>Server</mainClass>
+                    <mainClass>GameServerAndGameClients</mainClass>
                 </configuration>
             </plugin>
             <plugin>
