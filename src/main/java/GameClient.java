@@ -33,8 +33,7 @@ public class GameClient {
               public void onNext(
                   GameService.GameState
                       newGameState) { // Handle incoming GameState updates from the server
-                logger.info(
-                    "startGame().onNext() - called with newGameState {}", newGameState);
+                logger.info("startGame().onNext() - called with newGameState {}", newGameState);
                 gameState = newGameState;
                 logger.info("startGame().onNext() - local gameState is now {}", gameState);
               }
@@ -70,7 +69,11 @@ public class GameClient {
 
     for (int x = 0; x < 100; x++) {
       randomState = GameServerAndGameClients.doRandomAction(defaultState);
-      logger.info("Generated {} of {} newRandomState on the Client Side {}", x, GameServerAndGameClients.MAX_MOVES, randomState);
+      logger.info(
+          "Generated {} of {} newRandomState on the Client Side {}",
+          x,
+          GameServerAndGameClients.MAX_MOVES,
+          randomState);
       playerState = randomState;
       requestObserver.onNext(playerState);
       logger.info("Sent playerState {}", playerState);

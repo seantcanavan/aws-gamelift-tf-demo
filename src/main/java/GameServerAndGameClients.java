@@ -1,10 +1,9 @@
 import game.GameService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Random;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class GameServerAndGameClients {
   public static final int MAX_PLAYERS = 10;
