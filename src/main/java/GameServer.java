@@ -3,14 +3,15 @@ import game.GameService.GameState;
 import game.GameStateServiceGrpc;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class GameServer {
   public static final int PORT = 50051; // Example port number
@@ -43,7 +44,7 @@ public class GameServer {
             .build()
             .start();
 
-    logger.info("Successfully started GameServer on port " + PORT);
+    logger.info("Successfully started GameServer on port {}", PORT);
 
     Runtime.getRuntime()
         .addShutdownHook(
@@ -80,9 +81,7 @@ public class GameServer {
         StreamObserver<GameState> responseObserver) {
       // Register the new player and assign them a unique player number
       final int playerNumber = playerCount.getAndIncrement();
-      logger.info(
-          "public StreamObserver<GameService.PlayerState> streamGameState - retrieved player number "
-              + playerNumber);
+      logger.info("public StreamObserver<GameService.PlayerState> streamGameState - retrieved player number {}", playerNumber);
       playerStateStreams.put(playerNumber, responseObserver);
       playerStates.put(playerNumber, GameService.PlayerState.newBuilder().build());
 
@@ -91,13 +90,10 @@ public class GameServer {
         @Override
         public void onNext(GameService.PlayerState playerState) {
           // Receive the new player state and update the internal game state appropriately
-          logger.info("StreamObserver<>().onNext() - received new playerState " + playerState);
+          logger.info("StreamObserver<>().onNext() - received new playerState {}", playerState);
           // TODO(Canavan): make this multi-threaded safe
           gameState = generateUpdatedGameState(playerState);
-          logger.info(
-              "StreamObserver<>().onNext() - updated game state with new playerState ["
-                  + gameState
-                  + "]");
+          logger.info("StreamObserver<>().onNext() - updated game state with new playerState {}", gameState);
 
           // Then, broadcast the updated GameState to all connected players
           for (Integer x : playerStateStreams.keySet()) {
@@ -129,7 +125,7 @@ public class GameServer {
     // Utility method to generate the updated GameState based on the received PlayerState
     // This needs to be implemented according to your specific game logic
     private GameState generateUpdatedGameState(GameService.PlayerState playerState) {
-      logger.info("Received PlayerState " + playerState);
+      logger.info("Received PlayerState {}", playerState);
 
       if (playerState.getNumber() == 1) {
         gameState = GameState.newBuilder(gameState).setPlayer1(playerState).build();
@@ -153,7 +149,7 @@ public class GameServer {
         gameState = GameState.newBuilder(gameState).setPlayer10(playerState).build();
       }
 
-      logger.info("GameState is now " + gameState);
+      logger.info("GameState is now {}", gameState);
 
       return gameState;
     }

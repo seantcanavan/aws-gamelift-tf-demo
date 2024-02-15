@@ -34,14 +34,14 @@ public class GameClient {
                   GameService.GameState
                       newGameState) { // Handle incoming GameState updates from the server
                 logger.info(
-                    "startGame().onNext() - called with newGameState " + newGameState.toString());
+                    "startGame().onNext() - called with newGameState {}", newGameState);
                 gameState = newGameState;
-                logger.info("startGame().onNext() - local gameState is now " + gameState);
+                logger.info("startGame().onNext() - local gameState is now {}", gameState);
               }
 
               @Override
               public void onError(Throwable t) { // Handle errors for the client game stream
-                logger.info("startGame().onError() - called with Throwable " + t);
+                logger.info("startGame().onError() - called with Throwable {}", t.toString());
                 t.printStackTrace();
               }
 
@@ -62,35 +62,18 @@ public class GameClient {
     // Example of sending a PlayerState message
     logger.info("Initializing default state");
     GameService.PlayerState defaultState = GameServerAndGameClients.getDefaultState();
-    logger.info("Sending default state " + defaultState);
+    logger.info("Sending default state {}", defaultState);
     requestObserver.onNext(defaultState);
-    logger.info("Default state sent " + defaultState);
+    logger.info("Default state sent {}", defaultState);
 
     GameService.PlayerState randomState;
 
     for (int x = 0; x < 100; x++) {
       randomState = GameServerAndGameClients.doRandomAction(defaultState);
-      logger.info(
-          "Generated ["
-              + x
-              + "] of ["
-              + GameServerAndGameClients.MAX_MOVES
-              + "] newRandomState on the Client Side "
-              + randomState);
+      logger.info("Generated {} of {} newRandomState on the Client Side {}", x, GameServerAndGameClients.MAX_MOVES, randomState);
       playerState = randomState;
       requestObserver.onNext(playerState);
-      logger.info("Sent playerState " + playerState);
+      logger.info("Sent playerState {}", playerState);
     }
-
-    // Mark the end of requests
-    //      requestObserver.onCompleted();
-
-    // Wait a bit for responses before shutting down
-    //      Thread.sleep(10000);
-    //    } catch (RuntimeException | InterruptedException e) {
-    //    } catch (RuntimeException e) {
-    //      requestObserver.onError(e);
-    //      throw e;
-    //    }
   }
 }
