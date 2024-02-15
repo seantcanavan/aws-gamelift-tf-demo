@@ -27,60 +27,61 @@ public class GameClient {
   }
 
   // Method to start the bidirectional streaming
-  public void startGame() throws InterruptedException {
+  public void startGame(int playerNumber) {
     StreamObserver<GameService.PlayerState> requestObserver =
         asyncStub.streamGameState(
             new StreamObserver<>() {
               @Override
               public void onNext(GameService.GameState newGameState) {
-                logger.info("[CLIENT][RECEIVE] newGameState {}", newGameState);
+                logger.info("[CLIENT][RECEIVE][{}] newGameState {}", playerNumber, newGameState);
                 gameState = newGameState;
-                logger.info("[CLIENT] local gameState is now {}", gameState);
               }
 
               @Override
               public void onError(Throwable t) {
-                logger.error("[CLIENT][RECEIVE] ERROR {}", t.toString());
+                logger.error("[CLIENT][RECEIVE][{}] ERROR {}", playerNumber, t.toString());
                 t.printStackTrace();
                 try {
                   shutdown();
                 } catch (InterruptedException e) {
-                  logger.error("[CLIENT][EXCEPTION] ERROR {}", e.toString());
+                  logger.error("[CLIENT][EXCEPTION][{}] ERROR {}", playerNumber, e.toString());
                 }
               }
 
               @Override
               public void onCompleted() {
-                logger.info("[CLIENT][RECEIVE] COMPLETED");
+                logger.info("[CLIENT][RECEIVE][{}] COMPLETED", playerNumber);
                 try {
                   shutdown();
-                  logger.info("[CLIENT] shutdown() success");
+                  logger.info("[CLIENT][{}] shutdown() success", playerNumber);
                 } catch (InterruptedException e) {
-                  logger.error("[CLIENT][EXCEPTION] ERROR {}", e.toString());
+                  logger.error("[CLIENT][EXCEPTION][{}] ERROR {}", playerNumber, e.toString());
                   e.printStackTrace();
                 }
               }
             });
 
-    GameService.PlayerState defaultState = GameServerAndGameClients.getDefaultState();
-    requestObserver.onNext(defaultState);
-    logger.info("[CLIENT] startGame() Sent default state {}", defaultState);
-
-    GameService.PlayerState randomState;
+    GameService.PlayerState state = GameServerAndGameClients.getDefaultState(playerNumber);
 
     for (int moveNum = 1; moveNum <= GameServerAndGameClients.MAX_MOVES; moveNum++) {
-      randomState = GameServerAndGameClients.doRandomAction(defaultState);
       logger.info(
-          "[CLIENT] startGame() Generated {} of {} newRandomState on the Client Side {}",
+          "[CLIENT][{}] startGame() Generated {} of {} newRandomState on the Client Side {}",
+          playerNumber,
           moveNum,
           GameServerAndGameClients.MAX_MOVES,
-          randomState);
-      GameService.PlayerState playerState = randomState;
-      requestObserver.onNext(playerState);
-      logger.info("[CLIENT][SEND] playerState {}", playerState);
-      int delayMs = random.nextInt(0, 3000) + 1000;
-      logger.info("[CLIENT] startGame() Sleeping for {} milliseconds", delayMs);
-      Thread.sleep(delayMs);
+          state);
+
+      requestObserver.onNext(state);
+      logger.info("[CLIENT][SEND][{}] playerState {}", playerNumber, state);
+      state = GameServerAndGameClients.doRandomAction(state);
+      long millis = 1500;
+      logger.info("[CLIENT][{}] sleeping for {}ms", playerNumber, millis);
+      try {
+        Thread.sleep(millis);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+        logger.error("[CLIENT][{}] ERROR {}", playerNumber, e.toString());
+      }
     }
   }
 }

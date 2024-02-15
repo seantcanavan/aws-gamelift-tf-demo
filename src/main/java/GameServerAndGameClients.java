@@ -1,12 +1,12 @@
 import game.GameService;
 import java.io.IOException;
-import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class GameServerAndGameClients {
-  public static final int MAX_PLAYERS = 1;
+  public static final int MAX_PLAYERS = 2;
   public static final int MAX_POS = 1000;
   public static final int MAX_MOVES = 2;
   private static final Logger logger = LoggerFactory.getLogger(GameServerAndGameClients.class);
@@ -23,9 +23,9 @@ public class GameServerAndGameClients {
       logger.info("Initializing GameClients");
       GameClients gameClients = new GameClients();
       Thread.sleep(10000);
-      List<GameClient> clientsList = gameClients.getClients();
+      Map<Integer, GameClient> clientsMap = gameClients.getClients();
       // shutdown the game first
-      clientsList.get(0).shutdown();
+      clientsMap.get(1).shutdown();
       gameServer.stop();
     } catch (InterruptedException | IOException e) {
       e.printStackTrace();
@@ -35,10 +35,10 @@ public class GameServerAndGameClients {
     logger.info("end of main reached");
   }
 
-  public static GameService.PlayerState getDefaultState() {
+  public static GameService.PlayerState getDefaultState(int playerNumber) {
     return GameService.PlayerState.newBuilder()
         .setConnected(true)
-        .setNumber(0)
+        .setNumber(playerNumber)
         .setCoordinates(
             GameService.Coordinates.newBuilder()
                 .setX(getRandomMiddleCoordinates())
