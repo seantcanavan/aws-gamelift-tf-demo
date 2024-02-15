@@ -3,8 +3,12 @@ import game.GameStateServiceGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class GameClient {
+  private static final Logger logger = LoggerFactory.getLogger(GameClient.class);
+
   private final ManagedChannel channel;
   private final GameStateServiceGrpc.GameStateServiceStub asyncStub;
   private GameService.GameState gameState = GameService.GameState.newBuilder().build();
@@ -29,26 +33,26 @@ public class GameClient {
               public void onNext(
                   GameService.GameState
                       newGameState) { // Handle incoming GameState updates from the server
-                System.out.println(
+                logger.info(
                     "startGame().onNext() - called with newGameState " + newGameState.toString());
                 gameState = newGameState;
-                System.out.println("startGame().onNext() - local gameState is now " + gameState);
+                logger.info("startGame().onNext() - local gameState is now " + gameState);
               }
 
               @Override
               public void onError(Throwable t) { // Handle errors for the client game stream
-                System.out.println("startGame().onError() - called with Throwable " + t);
+                logger.info("startGame().onError() - called with Throwable " + t);
                 t.printStackTrace();
               }
 
               @Override
               public void onCompleted() { // Handle the stream closing for the client game stream
-                System.out.println("startGame().onCompleted() - called");
+                logger.info("startGame().onCompleted() - called");
                 try {
                   shutdown();
-                  System.out.println("startGame().onCompleted() - shutdown success");
+                  logger.info("startGame().onCompleted() - shutdown success");
                 } catch (InterruptedException e) {
-                  System.out.println("startGame().onCompleted() - shutdown failed");
+                  logger.info("startGame().onCompleted() - shutdown failed");
                   e.printStackTrace();
                 }
               }
@@ -56,17 +60,17 @@ public class GameClient {
 
     //    try {
     // Example of sending a PlayerState message
-    System.out.println("Initializing default state");
+    logger.info("Initializing default state");
     GameService.PlayerState defaultState = GameServerAndGameClients.getDefaultState();
-    System.out.println("Sending default state " + defaultState);
+    logger.info("Sending default state " + defaultState);
     requestObserver.onNext(defaultState);
-    System.out.println("Default state sent " + defaultState);
+    logger.info("Default state sent " + defaultState);
 
     GameService.PlayerState randomState;
 
     for (int x = 0; x < 100; x++) {
       randomState = GameServerAndGameClients.doRandomAction(defaultState);
-      System.out.println(
+      logger.info(
           "Generated ["
               + x
               + "] of ["
@@ -75,7 +79,7 @@ public class GameClient {
               + randomState);
       playerState = randomState;
       requestObserver.onNext(playerState);
-      System.out.println("Sent playerState " + playerState);
+      logger.info("Sent playerState " + playerState);
     }
 
     // Mark the end of requests

@@ -1,4 +1,7 @@
 import game.GameService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Random;
@@ -7,17 +10,18 @@ public class GameServerAndGameClients {
   public static final int MAX_PLAYERS = 10;
   public static final int MAX_POS = 1000;
   public static final int MAX_MOVES = 100;
+  private static final Logger logger = LoggerFactory.getLogger(GameServerAndGameClients.class);
   private static final Random random = new Random();
 
   public static void main(String[] args) {
-    System.out.println("Initializing GameServer");
+    logger.info("Initializing GameServer");
     GameServer gameServer = new GameServer();
 
     try {
       gameServer.start();
-      System.out.println("Sleeping for 3s before creating GameClients");
+      logger.info("Sleeping for 3s before creating GameClients");
       Thread.sleep(3000);
-      System.out.println("Initializing GameClients");
+      logger.info("Initializing GameClients");
       GameClients gameClients = new GameClients();
       Thread.sleep(10000);
       List<GameClient> clientsList = gameClients.getClients();
@@ -29,7 +33,7 @@ public class GameServerAndGameClients {
       System.err.println(e);
     }
 
-    System.out.println("end of main reached");
+    logger.info("end of main reached");
   }
 
   public static GameService.PlayerState getDefaultState() {
@@ -53,7 +57,7 @@ public class GameServerAndGameClients {
 
     // handle the default state where the player starts at 0, 0, 0
     if (x == 0 && y == 0 && z == 0) {
-      System.out.println("Detected 0, 0, 0. Returning middle-ish coordinates");
+      logger.info("Detected 0, 0, 0. Returning middle-ish coordinates");
       return GameService.Coordinates.newBuilder()
           .setX(getRandomMiddleCoordinates())
           .setY(getRandomMiddleCoordinates())
