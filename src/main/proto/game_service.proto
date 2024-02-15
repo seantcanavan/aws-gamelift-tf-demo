@@ -3,11 +3,7 @@ syntax = "proto3";
 package game;
 
 service GameStateService {
-  rpc StreamGameState(stream PlayerActionUpdates) returns (stream PlayerActionUpdate) {}
-}
-
-message PlayerActionUpdates {
-  repeated PlayerActionUpdate playerActionUpdates = 1;
+  rpc StreamGameState(stream GameState) returns (stream PlayerState) {}
 }
 
 message PlayerMetadata {
@@ -40,12 +36,6 @@ message Coordinates {
   int32 x = 4; // where in the X plane
   int32 y = 5;
   int32 z = 6;
-}
-
-// Define player action fields (e.g., move, jump)
-message PlayerActionUpdate {
-  PlayerAction playerAction = 1;
-  Coordinates coordinates = 2;
 }
 
 // Define game state update fields with optional tags (in case certain players haven't moved / updated)
