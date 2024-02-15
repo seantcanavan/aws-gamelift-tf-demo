@@ -6,13 +6,15 @@ import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Random;
+
 public class GameClient {
   private static final Logger logger = LoggerFactory.getLogger(GameClient.class);
 
+  private final Random random = new Random();
   private final ManagedChannel channel;
   private final GameStateServiceGrpc.GameStateServiceStub asyncStub;
   private GameService.GameState gameState = GameService.GameState.newBuilder().build();
-  private GameService.PlayerState playerState = GameService.PlayerState.newBuilder().build();
 
   // Constructor to initialize the channel and stub
   public GameClient(String host, int port) {
@@ -25,58 +27,61 @@ public class GameClient {
   }
 
   // Method to start the bidirectional streaming
-  public void startGame() throws InterruptedException {
+  public void startGame(int playerNumber) {
     StreamObserver<GameService.PlayerState> requestObserver =
         asyncStub.streamGameState(
             new StreamObserver<>() {
               @Override
-              public void onNext(
-                  GameService.GameState
-                      newGameState) { // Handle incoming GameState updates from the server
-                logger.info("startGame().onNext() - called with newGameState {}", newGameState);
+              public void onNext(GameService.GameState newGameState) {
+                logger.info("[CLIENT][RECEIVE][{}] newGameState {}", playerNumber, newGameState);
                 gameState = newGameState;
-                logger.info("startGame().onNext() - local gameState is now {}", gameState);
               }
 
               @Override
-              public void onError(Throwable t) { // Handle errors for the client game stream
-                logger.info("startGame().onError() - called with Throwable {}", t.toString());
+              public void onError(Throwable t) {
+                logger.error("[CLIENT][RECEIVE][{}] ERROR {}", playerNumber, t.toString());
                 t.printStackTrace();
-              }
-
-              @Override
-              public void onCompleted() { // Handle the stream closing for the client game stream
-                logger.info("startGame().onCompleted() - called");
                 try {
                   shutdown();
-                  logger.info("startGame().onCompleted() - shutdown success");
                 } catch (InterruptedException e) {
-                  logger.info("startGame().onCompleted() - shutdown failed");
+                  logger.error("[CLIENT][EXCEPTION][{}] ERROR {}", playerNumber, e.toString());
+                }
+              }
+
+              @Override
+              public void onCompleted() {
+                logger.info("[CLIENT][RECEIVE][{}] COMPLETED", playerNumber);
+                try {
+                  shutdown();
+                  logger.info("[CLIENT][{}] shutdown() success", playerNumber);
+                } catch (InterruptedException e) {
+                  logger.error("[CLIENT][EXCEPTION][{}] ERROR {}", playerNumber, e.toString());
                   e.printStackTrace();
                 }
               }
             });
 
-    //    try {
-    // Example of sending a PlayerState message
-    logger.info("Initializing default state");
-    GameService.PlayerState defaultState = GameServerAndGameClients.getDefaultState();
-    logger.info("Sending default state {}", defaultState);
-    requestObserver.onNext(defaultState);
-    logger.info("Default state sent {}", defaultState);
+    GameService.PlayerState state = GameServerAndGameClients.getDefaultState(playerNumber);
 
-    GameService.PlayerState randomState;
-
-    for (int x = 0; x < 100; x++) {
-      randomState = GameServerAndGameClients.doRandomAction(defaultState);
+    for (int moveNum = 1; moveNum <= GameServerAndGameClients.MAX_MOVES; moveNum++) {
       logger.info(
-          "Generated {} of {} newRandomState on the Client Side {}",
-          x,
+          "[CLIENT][{}] startGame() Generated {} of {} newRandomState on the Client Side {}",
+          playerNumber,
+          moveNum,
           GameServerAndGameClients.MAX_MOVES,
-          randomState);
-      playerState = randomState;
-      requestObserver.onNext(playerState);
-      logger.info("Sent playerState {}", playerState);
+          state);
+
+      requestObserver.onNext(state);
+      logger.info("[CLIENT][SEND][{}] playerState {}", playerNumber, state);
+      state = GameServerAndGameClients.doRandomAction(state);
+      long millis = 1500;
+      logger.info("[CLIENT][{}] sleeping for {}ms", playerNumber, millis);
+      try {
+        Thread.sleep(millis);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+        logger.error("[CLIENT][{}] ERROR {}", playerNumber, e.toString());
+      }
     }
   }
 }
