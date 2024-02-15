@@ -3,36 +3,57 @@ import game.GameService.GameState;
 import game.GameStateServiceGrpc;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class GameServer {
+  private io.grpc.Server grpcServer;
   public static final int PORT = 50051; // Example port number
   private static final Logger logger = LoggerFactory.getLogger(GameServer.class);
-  // A list of all of the player's GRPC streams
-  private Map<Integer, StreamObserver<GameState>> playerStateStreams =
+
+  /**
+   * A map of all the streams between every individual player and the server key'd off of the
+   * player's number.
+   */
+  private final Map<Integer, StreamObserver<GameState>> playerStateStreams =
       Collections.synchronizedMap(new HashMap<>(GameServerAndGameClients.MAX_PLAYERS));
-  private Map<Integer, GameService.PlayerState> playerStates =
+
+  /**
+   * A map of all of every individual player's state key'd off of the player's number.
+   */
+  private final Map<Integer, GameService.PlayerState> playerStates =
       Collections.synchronizedMap(new HashMap<>(GameServerAndGameClients.MAX_PLAYERS));
-  private io.grpc.Server grpcServer;
-  private AtomicInteger playerCount = new AtomicInteger(0);
+
+  /**
+   * Records the number of players in the game. Increments to add new players to the game so they
+   * can be tracked via their unique stream number / player state number.
+   */
+  private final AtomicInteger playerCount = new AtomicInteger(0);
+
+  /**
+   * The global game state. Defaults to empty. TODO(Canavan): this probably needs a different
+   * constructor for initial state
+   */
   private GameState gameState = GameState.newBuilder().build();
 
   public static void main(String[] args) throws IOException, InterruptedException {
-    logger.info("GameServer.main called");
+    logger.info("[SERVER] main() called");
     final GameServer server = new GameServer();
     server.start();
+    logger.info("[SERVER] server.start() called. Blocking until shutdown.");
     server.blockUntilShutdown();
+    logger.info("[SERVER] server.blockUntilShutdown() success.");
   }
 
   public void start() throws IOException {
-    logger.info("GameServer.start() called");
+    logger.info("[SERVER] start() called");
     grpcServer =
         ServerBuilder.forPort(PORT)
             .addService(new GameStateServiceImpl())
@@ -43,34 +64,32 @@ public class GameServer {
             .build()
             .start();
 
-    logger.info("Successfully started GameServer on port {}", PORT);
+    logger.info("[SERVER] grpcServer.start() called on port {}", PORT);
 
     Runtime.getRuntime()
         .addShutdownHook(
             new Thread(
                 () -> {
-                  System.err.println("*** shutting down gRPC server since JVM is shutting down");
+                  logger.error("*** shutting down gRPC server since JVM is shutting down");
                   GameServer.this.stop();
-                  System.err.println("*** server shut down");
+                  logger.error("*** server shut down");
                 }));
   }
 
   public void stop() {
-    logger.info("GameServer.stop() - successfully called");
+    logger.info("[SERVER] stop() grpcServer {}", grpcServer);
     if (grpcServer != null) {
-      logger.info("GameServer.stop() - grpcServer is not null - shutting down");
       grpcServer.shutdown();
-      logger.info("GameServer.stop() - successfully shutdown grpcServer");
       grpcServer = null;
+      logger.info("[SERVER] grpcServer.shutdown() success");
     }
   }
 
   public void blockUntilShutdown() throws InterruptedException {
-    logger.info("GameServer.blockUntilShutdown - successfully called");
+    logger.info("[SERVER] blockUntilShutdown grpcServer {}", grpcServer);
     if (grpcServer != null) {
-      logger.info("GameServer.blockUntilShutdown - grpcServer is not null - awaiting termination");
       grpcServer.awaitTermination();
-      logger.info("GameServer.blockUntilShutdown - termination awaited successfully");
+      logger.info("[SERVER] grpcServer.awaitTermination() success");
     }
   }
 
@@ -78,48 +97,45 @@ public class GameServer {
     @Override
     public StreamObserver<GameService.PlayerState> streamGameState(
         StreamObserver<GameState> responseObserver) {
-      // Register the new player and assign them a unique player number
       final int playerNumber = playerCount.getAndIncrement();
-      logger.info(
-          "public StreamObserver<GameService.PlayerState> streamGameState - retrieved player number {}",
-          playerNumber);
+      logger.info("[SERVER] new PID {}", playerNumber);
       playerStateStreams.put(playerNumber, responseObserver);
       playerStates.put(playerNumber, GameService.PlayerState.newBuilder().build());
+      logger.info("[SERVER] {} player state streams", playerStateStreams.keySet().size());
+      logger.info("[SERVER] {} player states", playerStates.keySet().size());
 
       // Return a new StreamObserver to handle incoming PlayerState messages from the client
       return new StreamObserver<>() {
         @Override
         public void onNext(GameService.PlayerState playerState) {
-          // Receive the new player state and update the internal game state appropriately
-          logger.info("StreamObserver<>().onNext() - received new playerState {}", playerState);
-          // TODO(Canavan): make this multi-threaded safe
-          gameState = generateUpdatedGameState(playerState);
           logger.info(
-              "StreamObserver<>().onNext() - updated game state with new playerState {}",
-              gameState);
-
+              "[SERVER][RECEIVE] PID {} X {} Y {} Z {}",
+              playerState.getNumber(),
+              playerState.getCoordinates().getX(),
+              playerState.getCoordinates().getY(),
+              playerState.getCoordinates().getZ());
+          // TODO(Canavan): make this multi-threaded safe
+          generateUpdatedGameState(playerState);
           // Then, broadcast the updated GameState to all connected players
           for (Integer x : playerStateStreams.keySet()) {
+            logger.info("[SERVER][SEND] PID {} GameState {}", x, gameState);
             playerStateStreams.get(x).onNext(gameState);
           }
         }
 
         @Override
         public void onError(Throwable t) {
-          logger.info("StreamObserver<>().onError() - stream error on the server side");
+          logger.error("[SERVER][RECEIVE] ERROR {}", t.toString());
           t.printStackTrace();
-          // Handle the error, such as logging it and removing the player's stream
-          System.err.println("Error in player stream: " + t.getMessage());
           playerStateStreams.remove(playerNumber);
           playerStates.put(playerNumber, null);
         }
 
         @Override
         public void onCompleted() {
-          logger.info("StreamObserver<>().onCompleted() - function was called");
-          // Handle stream completion, such as by removing the player's stream
-          playerStateStreams.remove(playerNumber);
+          logger.info("[SERVER][RECEIVE] COMPLETED");
           responseObserver.onCompleted();
+          playerStateStreams.remove(playerNumber);
           playerStates.put(playerNumber, null);
         }
       };
@@ -127,9 +143,7 @@ public class GameServer {
 
     // Utility method to generate the updated GameState based on the received PlayerState
     // This needs to be implemented according to your specific game logic
-    private GameState generateUpdatedGameState(GameService.PlayerState playerState) {
-      logger.info("Received PlayerState {}", playerState);
-
+    private void generateUpdatedGameState(GameService.PlayerState playerState) {
       if (playerState.getNumber() == 1) {
         gameState = GameState.newBuilder(gameState).setPlayer1(playerState).build();
       } else if (playerState.getNumber() == 2) {
@@ -151,10 +165,6 @@ public class GameServer {
       } else if (playerState.getNumber() == 10) {
         gameState = GameState.newBuilder(gameState).setPlayer10(playerState).build();
       }
-
-      logger.info("GameState is now {}", gameState);
-
-      return gameState;
     }
   }
 }
