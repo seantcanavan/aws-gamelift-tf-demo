@@ -9,7 +9,7 @@ public class GameClients {
 
   GameClients() throws InterruptedException {
     for (int x = 0; x < MAX_CLIENT_INSTANCES; x++) {
-//      GameClient newClient = new GameClient("localhost", firstClientPort.addAndGet(1));
+      //      GameClient newClient = new GameClient("localhost", firstClientPort.addAndGet(1));
       GameClient newClient = new GameClient("localhost", GameServer.PORT);
       newClient.startGame();
       clients.add(newClient);

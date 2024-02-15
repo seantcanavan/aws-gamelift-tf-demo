@@ -1,5 +1,4 @@
 import game.GameService;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Random;
@@ -34,24 +33,17 @@ public class GameServerAndGameClients {
   }
 
   public static GameService.PlayerState getDefaultState() {
-    return GameService.PlayerState.
-        newBuilder().
-        setConnected(true).
-        setNumber(0).
-        setCoordinates(GameService.Coordinates.
-            newBuilder().
-            setX(0).
-            setY(0).
-            setZ(0).
-            build()).
-        build();
+    return GameService.PlayerState.newBuilder()
+        .setConnected(true)
+        .setNumber(0)
+        .setCoordinates(GameService.Coordinates.newBuilder().setX(0).setY(0).setZ(0).build())
+        .build();
   }
 
   public static GameService.PlayerState doRandomAction(GameService.PlayerState playerState) {
-    return GameService.PlayerState.
-        newBuilder(playerState).
-        setCoordinates(doRandomMovement(playerState.getCoordinates())).
-        build();
+    return GameService.PlayerState.newBuilder(playerState)
+        .setCoordinates(doRandomMovement(playerState.getCoordinates()))
+        .build();
   }
 
   public static GameService.Coordinates doRandomMovement(GameService.Coordinates coordinates) {
@@ -62,24 +54,22 @@ public class GameServerAndGameClients {
     // handle the default state where the player starts at 0, 0, 0
     if (x == 0 && y == 0 && z == 0) {
       System.out.println("Detected 0, 0, 0. Returning middle-ish coordinates");
-      return GameService.Coordinates.
-          newBuilder().
-          setX(getRandomMiddleCoordinates()).
-          setY(getRandomMiddleCoordinates()).
-          setZ(getRandomMiddleCoordinates()).
-          build();
+      return GameService.Coordinates.newBuilder()
+          .setX(getRandomMiddleCoordinates())
+          .setY(getRandomMiddleCoordinates())
+          .setZ(getRandomMiddleCoordinates())
+          .build();
     }
 
     // Otherwise, randomly nudge the player along the X, Y, and Z axis by 5
-    // Unless that would put the player out of bounds, then correct by moving 100 in the other direction
-    return GameService.Coordinates.
-        newBuilder().
-        setX(playerMoves(x)).
-        setY(playerMoves(y)).
-        setZ(playerMoves(z)).
-        build();
+    // Unless that would put the player out of bounds, then correct by moving 100 in the other
+    // direction
+    return GameService.Coordinates.newBuilder()
+        .setX(playerMoves(x))
+        .setY(playerMoves(y))
+        .setZ(playerMoves(z))
+        .build();
   }
-
 
   public static int getRandomMiddleCoordinates() {
     // Starting value
@@ -91,7 +81,6 @@ public class GameServerAndGameClients {
     // Apply the change based on the add flag
     return add ? base + change : base - change;
   }
-
 
   public static int playerMoves(int pos) {
     // 50% chance to either add or subtract 5
