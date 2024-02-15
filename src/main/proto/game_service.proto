@@ -3,7 +3,9 @@ syntax = "proto3";
 package game;
 
 service GameStateService {
-  rpc StreamGameState(stream GameState) returns (stream PlayerState) {}
+  // client sends streams of PlayerState request messages
+  // server sends streams of GameState response messages
+  rpc StreamGameState(stream PlayerState) returns (stream GameState) {}
 }
 
 message PlayerMetadata {
