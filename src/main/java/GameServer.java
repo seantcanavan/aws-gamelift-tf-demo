@@ -109,6 +109,7 @@ public class GameServer extends LoggableState {
     grpcServer.shutdown();
     logger.info("[SERVER][STOP] successfully called shutdown() - about to call awaitTermination()");
     grpcServer.awaitTermination(5, SECONDS);
+    grpcServer.shutdownNow();
     grpcServer = null;
     logger.info("[SERVER] grpcServer.shutdown() success");
   }

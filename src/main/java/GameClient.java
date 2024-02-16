@@ -61,7 +61,7 @@ public class GameClient extends LoggableState implements StreamObserver<GameServ
 
     // Optionally join the thread to ensure it has finished
     try {
-      sendingThread.join(); // Wait for the printing thread to finish
+      sendingThread.join(5000); // Wait for the printing thread to finish
       channel.shutdown().awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS);
     } catch (InterruptedException e) {
       logger.error("Interrupted while waiting for the printing thread to finish", e);
