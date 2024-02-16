@@ -1,12 +1,11 @@
 import game.GameService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class GameServerAndGameClients {
   public static final int MAX_PLAYERS = 10;
@@ -24,8 +23,8 @@ public class GameServerAndGameClients {
       gameServer.startLogging();
       logger.info("Successfully started GameServer");
       for (int playerNumber = 1;
-           playerNumber <= GameServerAndGameClients.MAX_PLAYERS;
-           playerNumber++) {
+          playerNumber <= GameServerAndGameClients.MAX_PLAYERS;
+          playerNumber++) {
         logger.info(
             "Attempting to create {} of {} GameClient instances",
             playerNumber,
@@ -63,28 +62,28 @@ public class GameServerAndGameClients {
       System.err.println(e);
     }
 
-    listAllThreads();
+    //    listAllThreads();
     logger.info("end of main reached");
   }
 
-  public static void listAllThreads() {
-    ThreadGroup root = Thread.currentThread().getThreadGroup().getParent();
-    while (root.getParent() != null) {
-      root = root.getParent();
-    }
-
-    Thread[] threads = new Thread[root.activeCount()];
-    while (root.enumerate(threads, true) == threads.length) {
-      threads = new Thread[threads.length * 2];
-    }
-
-    System.out.println("Active Threads:");
-    for (Thread t : threads) {
-      if (t != null) {
-        System.out.println("Thread name: " + t.getName() + " | State: " + t.getState());
-      }
-    }
-  }
+  //  public static void listAllThreads() {
+  //    ThreadGroup root = Thread.currentThread().getThreadGroup().getParent();
+  //    while (root.getParent() != null) {
+  //      root = root.getParent();
+  //    }
+  //
+  //    Thread[] threads = new Thread[root.activeCount()];
+  //    while (root.enumerate(threads, true) == threads.length) {
+  //      threads = new Thread[threads.length * 2];
+  //    }
+  //
+  //    System.out.println("Active Threads:");
+  //    for (Thread t : threads) {
+  //      if (t != null) {
+  //        System.out.println("Thread name: " + t.getName() + " | State: " + t.getState());
+  //      }
+  //    }
+  //  }
 
   public static GameService.PlayerState getDefaultState(int playerNumber) {
     return GameService.PlayerState.newBuilder()
