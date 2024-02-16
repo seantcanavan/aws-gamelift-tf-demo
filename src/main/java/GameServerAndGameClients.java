@@ -1,9 +1,10 @@
 import game.GameService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.Map;
 import java.util.Random;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class GameServerAndGameClients {
   public static final int MAX_PLAYERS = 2;
@@ -18,8 +19,8 @@ public class GameServerAndGameClients {
 
     try {
       gameServer.start();
-      logger.info("Sleeping for 3s before creating GameClients");
-      Thread.sleep(3000);
+      logger.info("Sleeping for 1s before creating GameClients");
+      Thread.sleep(1000);
       logger.info("Initializing GameClients");
       GameClients gameClients = new GameClients();
       Thread.sleep(10000);

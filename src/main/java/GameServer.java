@@ -3,14 +3,17 @@ import game.GameService.GameState;
 import game.GameStateServiceGrpc;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class GameServer extends LoggableState {
   public static final int PORT = 50051; // Example port number
@@ -23,7 +26,9 @@ public class GameServer extends LoggableState {
   private final Map<Integer, StreamObserver<GameState>> playerStateStreams =
       Collections.synchronizedMap(new HashMap<>(GameServerAndGameClients.MAX_PLAYERS));
 
-  /** A map of all of every individual player's state key'd off of the player's number. */
+  /**
+   * A map of all of every individual player's state key'd off of the player's number.
+   */
   private final Map<Integer, GameService.PlayerState> playerStates =
       Collections.synchronizedMap(new HashMap<>(GameServerAndGameClients.MAX_PLAYERS));
 
@@ -106,7 +111,7 @@ public class GameServer extends LoggableState {
     logger.info("[SERVER][STOP] about to call shutdown()");
     grpcServer.shutdown();
     logger.info("[SERVER][STOP] successfully called shutdown() - about to call awaitTermination()");
-    grpcServer.awaitTermination();
+    grpcServer.awaitTermination(5, SECONDS);
     grpcServer = null;
     logger.info("[SERVER] grpcServer.shutdown() success");
   }

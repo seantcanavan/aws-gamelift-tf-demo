@@ -1,5 +1,3 @@
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 import game.GameService;
 import game.GameStateServiceGrpc;
 import io.grpc.ManagedChannel;
@@ -7,6 +5,8 @@ import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class GameClient extends LoggableState implements StreamObserver<GameService.GameState> {
   private static final Logger logger = LoggerFactory.getLogger(GameClient.class);
@@ -52,11 +52,13 @@ public class GameClient extends LoggableState implements StreamObserver<GameServ
   }
 
   public void stop() throws InterruptedException {
-    logger.info("[CLIENT][STOP] about to call shutdown()");
+    logger.info("[CLIENT][STOP][{}] about to call shutdown()", playerNumber);
     channel.shutdown();
-    logger.info("[CLIENT][STOP] successfully called shutdown(). about to call awaitTermination");
+    logger.info(
+        "[CLIENT][STOP][{}] successfully called shutdown(). about to call awaitTermination",
+        playerNumber);
     channel.awaitTermination(10, SECONDS);
-    logger.info("[CLIENT][STOP] successfully called awaitTermination()");
+    logger.info("[CLIENT][STOP][{}] successfully called awaitTermination()", playerNumber);
   }
 
   public void start(int playerNumber) {
