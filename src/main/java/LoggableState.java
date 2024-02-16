@@ -78,7 +78,6 @@ public abstract class LoggableState extends GameState {
   }
 
   public synchronized void stopLogging() {
-    logger.info("[{}][{}] stopLogging called", type, playerNumber);
     setLoggingEnabled(false);
     logger.info("[{}][{}] setLoggingEnabled(false)", type, playerNumber);
     if (printThread == null) {
@@ -86,11 +85,9 @@ public abstract class LoggableState extends GameState {
       return;
     }
 
-    // Optionally join the thread to ensure it has finished
     try {
       logger.info("[{}][{}] about to call printThread.join(5000)", type, playerNumber);
       printThread.join(5000); // Wait for the printing thread to finish
-      printThread.interrupt();
       logger.info("[{}][{}] successfully called printThread.join(5000)", type, playerNumber);
     } catch (InterruptedException e) {
       logger.error("Interrupted while waiting for the printing thread to finish", e);
