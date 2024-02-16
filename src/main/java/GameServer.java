@@ -3,35 +3,36 @@ import game.GameService.GameState;
 import game.GameStateServiceGrpc;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class GameServer extends LoggableState {
   public static final int PORT = 50051; // Example port number
   private static final Logger logger = LoggerFactory.getLogger(GameServer.class);
+
   /**
    * A map of all the streams between every individual player and the server key'd off of the
    * player's number.
    */
   private final Map<Integer, StreamObserver<GameState>> playerStateStreams =
       Collections.synchronizedMap(new HashMap<>(GameServerAndGameClients.MAX_PLAYERS));
-  /**
-   * A map of all of every individual player's state key'd off of the player's number.
-   */
+
+  /** A map of all of every individual player's state key'd off of the player's number. */
   private final Map<Integer, GameService.PlayerState> playerStates =
       Collections.synchronizedMap(new HashMap<>(GameServerAndGameClients.MAX_PLAYERS));
+
   /**
    * Records the number of players in the game. Increments to add new players to the game so they
    * can be tracked via their unique stream number / player state number.
    */
   private final AtomicInteger playerCount = new AtomicInteger(1);
+
   private io.grpc.Server grpcServer;
   private GameService.PlayerState Player1State =
       GameService.PlayerState.newBuilder().setNumber(1).setConnected(false).build();
@@ -87,18 +88,27 @@ public class GameServer extends LoggableState {
             new Thread(
                 () -> {
                   logger.error("*** shutting down gRPC server since JVM is shutting down");
-                  GameServer.this.stop();
+                  try {
+                    GameServer.this.stop();
+                  } catch (InterruptedException e) {
+                    logger.error("start() GameServer.this.stop()");
+                  }
                   logger.error("*** server shut down");
                 }));
   }
 
-  public void stop() {
+  public void stop() throws InterruptedException {
     logger.info("[SERVER] stop() grpcServer {}", grpcServer);
-    if (grpcServer != null) {
-      grpcServer.shutdown();
-      grpcServer = null;
-      logger.info("[SERVER] grpcServer.shutdown() success");
+    if (grpcServer == null) {
+      return;
     }
+
+    logger.info("[SERVER][STOP] about to call shutdown()");
+    grpcServer.shutdown();
+    logger.info("[SERVER][STOP] successfully called shutdown() - about to call awaitTermination()");
+    grpcServer.awaitTermination();
+    grpcServer = null;
+    logger.info("[SERVER] grpcServer.shutdown() success");
   }
 
   public void blockUntilShutdown() throws InterruptedException {

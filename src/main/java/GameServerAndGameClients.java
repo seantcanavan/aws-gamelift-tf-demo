@@ -24,15 +24,38 @@ public class GameServerAndGameClients {
       GameClients gameClients = new GameClients();
       Thread.sleep(10000);
       Map<Integer, GameClient> clientsMap = gameClients.getClients();
-      // shutdown the game first
-      clientsMap.get(1).shutdown();
+      // shutdown each client individually first
+      for (Integer x : clientsMap.keySet()) {
+        clientsMap.get(x).stop();
+      }
+
       gameServer.stop();
     } catch (InterruptedException | IOException e) {
       e.printStackTrace();
       System.err.println(e);
     }
 
+    listAllThreads();
     logger.info("end of main reached");
+  }
+
+  public static void listAllThreads() {
+    ThreadGroup root = Thread.currentThread().getThreadGroup().getParent();
+    while (root.getParent() != null) {
+      root = root.getParent();
+    }
+
+    Thread[] threads = new Thread[root.activeCount()];
+    while (root.enumerate(threads, true) == threads.length) {
+      threads = new Thread[threads.length * 2];
+    }
+
+    System.out.println("Active Threads:");
+    for (Thread t : threads) {
+      if (t != null) {
+        System.out.println("Thread name: " + t.getName() + " | State: " + t.getState());
+      }
+    }
   }
 
   public static GameService.PlayerState getDefaultState(int playerNumber) {

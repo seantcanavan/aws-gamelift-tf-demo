@@ -1,9 +1,8 @@
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class GameClients {
   private static final Logger logger = LoggerFactory.getLogger(GameClients.class);
@@ -17,8 +16,8 @@ public class GameClients {
           x,
           GameServerAndGameClients.MAX_PLAYERS);
       GameClient newClient = new GameClient("localhost", GameServer.PORT, x);
-//      newClient.startPrinting(); TODO(Canavan): enable this when you're ready for spam
-      newClient.startGame(x);
+      //      newClient.startPrinting(); TODO(Canavan): enable this when you're ready for spam
+      newClient.start(x);
       logger.info("Successfully called .startGame() for GameClient {}", x);
       clientsMap.put(x, newClient);
     }
