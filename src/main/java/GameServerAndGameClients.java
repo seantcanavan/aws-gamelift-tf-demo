@@ -40,7 +40,7 @@ public class GameServerAndGameClients {
 
       long millis = 5000;
       logger.info("main is sleeping for {} millis", millis);
-      Thread.sleep(millis); // sleep for 30 seconds
+      Thread.sleep(millis); // sleep to let clients send messages
       logger.info("main is done sleeping for {} millis", millis);
       logger.info("clientsMap.keySet().size() {}", clientsMap.keySet().size());
       // Stop sending on all game clients and stop logging
@@ -55,7 +55,8 @@ public class GameServerAndGameClients {
                 currentClient.stopLogging();
                 logger.info("[CLIENT][STOP][{}] stopLogging() success", key);
               });
-      //      gameServer.stopLogging();
+      Thread.sleep(3000);
+      gameServer.stopLogging();
       gameServer.stop();
     } catch (InterruptedException | IOException e) {
       e.printStackTrace();

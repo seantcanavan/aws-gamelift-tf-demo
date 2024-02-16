@@ -1,18 +1,20 @@
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 import game.GameService;
 import game.GameService.GameState;
 import game.GameStateServiceGrpc;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class GameServer extends LoggableState {
   public static final int PORT = 50051; // Example port number
@@ -25,7 +27,9 @@ public class GameServer extends LoggableState {
   private final Map<Integer, StreamObserver<GameState>> playerStateStreams =
       Collections.synchronizedMap(new HashMap<>(GameServerAndGameClients.MAX_PLAYERS));
 
-  /** A map of all of every individual player's state key'd off of the player's number. */
+  /**
+   * A map of all of every individual player's state key'd off of the player's number.
+   */
   private final Map<Integer, GameService.PlayerState> playerStates =
       Collections.synchronizedMap(new HashMap<>(GameServerAndGameClients.MAX_PLAYERS));
 
@@ -57,6 +61,9 @@ public class GameServer extends LoggableState {
   private GameService.PlayerState Player10State =
       GameService.PlayerState.newBuilder().setNumber(10).setConnected(false).build();
 
+  ExecutorService executorService =
+      Executors.newFixedThreadPool(GameServerAndGameClients.MAX_PLAYERS);
+
   public GameServer() {
     this.type = "SERVER";
     this.playerNumber = 0;
@@ -72,14 +79,12 @@ public class GameServer extends LoggableState {
   }
 
   public void start() throws IOException {
+
     logger.info("[SERVER] start() called");
     grpcServer =
         ServerBuilder.forPort(PORT)
             .addService(new GameStateServiceImpl())
-            .executor(
-                Executors.newFixedThreadPool(
-                    GameServerAndGameClients
-                        .MAX_PLAYERS)) // Pool size matches the number of players
+            .executor(executorService) // Pool size matches the number of players
             .build()
             .start();
 
@@ -105,11 +110,25 @@ public class GameServer extends LoggableState {
       return;
     }
 
+    logger.info("[SERVER][STOP] about to call executorService.shutdown()");
+    executorService.shutdown();
+    logger.info("[SERVER][STOP] about to call executorService.awaitTermination(5, SECONDS)");
+    executorService.awaitTermination(5, SECONDS);
+    logger.info("[SERVER][STOP] about to call executorService.shutdownNow()");
+    executorService.shutdownNow();
+    logger.info("[SERVER][STOP] about to call executorService.awaitTermination(5, SECONDS)");
+    executorService.awaitTermination(5, SECONDS);
+
     logger.info("[SERVER][STOP] about to call shutdown()");
     grpcServer.shutdown();
     logger.info("[SERVER][STOP] successfully called shutdown() - about to call awaitTermination()");
     grpcServer.awaitTermination(5, SECONDS);
+    logger.info("[SERVER][STOP] about to call shutdownNow()");
     grpcServer.shutdownNow();
+    logger.info("[SERVER][STOP] listAllThreads");
+    GameServerAndGameClients.listAllThreads();
+    logger.info("[SERVER][STOP] about to call awaitTermination()");
+    grpcServer.awaitTermination();
     grpcServer = null;
     logger.info("[SERVER] grpcServer.shutdown() success");
   }
@@ -137,6 +156,10 @@ public class GameServer extends LoggableState {
       return new StreamObserver<>() {
         @Override
         public void onNext(GameService.PlayerState playerState) {
+          if (Thread.currentThread().isInterrupted()) {
+            return;
+          }
+
           logger.info(
               "[SERVER][RECEIVE] PID {} X {} Y {} Z {}",
               playerState.getNumber(),
@@ -192,7 +215,12 @@ public class GameServer extends LoggableState {
                   .build();
 
           logger.info("[SERVER][SEND] PID {}", playerState.getNumber());
-          playerStateStreams.get(playerState.getNumber()).onNext(gameState);
+
+          StreamObserver<GameState> playerStateStream =
+              playerStateStreams.get(playerState.getNumber());
+          if (playerStateStream != null) {
+            playerStateStream.onNext(gameState);
+          }
         }
 
         @Override

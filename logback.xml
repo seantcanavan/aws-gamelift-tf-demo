@@ -8,4 +8,9 @@
     <root level="info">
         <appender-ref ref="STDOUT"/>
     </root>
+
+    <!-- Increase logging level for gRPC to TRACE -->
+    <logger name="io.grpc" level="TRACE" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
 </configuration>
