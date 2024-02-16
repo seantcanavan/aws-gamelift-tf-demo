@@ -86,19 +86,6 @@ public class GameServer extends LoggableState {
             .start();
 
     logger.info("[SERVER] grpcServer.start() called on port {}", PORT);
-
-    Runtime.getRuntime()
-        .addShutdownHook(
-            new Thread(
-                () -> {
-                  logger.error("*** shutting down gRPC server since JVM is shutting down");
-                  try {
-                    GameServer.this.stop();
-                  } catch (InterruptedException e) {
-                    logger.error("start() GameServer.this.stop()");
-                  }
-                  logger.error("*** server shut down");
-                }));
   }
 
   public void stop() throws InterruptedException {
