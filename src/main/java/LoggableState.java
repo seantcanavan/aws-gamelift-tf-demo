@@ -7,47 +7,51 @@ public abstract class LoggableState extends GameState {
   int playerNumber;
 
   private Thread printThread = null;
-  private boolean printingEnabled;
+  private boolean loggingEnabled;
 
-  public synchronized void setPrintingEnabled(boolean printingEnabled) {
-    this.printingEnabled = printingEnabled;
+  private synchronized void setLoggingEnabled(boolean loggingEnabled) {
+    this.loggingEnabled = loggingEnabled;
   }
 
-  public synchronized boolean isPrintingEnabled() {
-    return this.printingEnabled;
+  private synchronized boolean isLoggingEnabled() {
+    return this.loggingEnabled;
   }
 
-  public synchronized void startPrinting() {
-    if (printThread == null || !printThread.isAlive()) {
-      setPrintingEnabled(true);
-      printThread =
-          new Thread(
-              () -> {
-                while (isPrintingEnabled()) {
-                  try {
-                    logger.info("[{}][{}] GameState {}", type, playerNumber, getGameState());
-                    Thread.sleep(1000); // Sleep for 1 second
-                  } catch (InterruptedException e) {
-                    logger.error("[{}][{}] Printing thread interrupted", type, playerNumber, e);
-                    Thread.currentThread().interrupt(); // Restore interrupted status
-                    break; // Exit the loop if the thread is interrupted
-                  }
-                }
-              });
-      printThread.start();
+  public synchronized void startLogging() {
+    if (printThread != null && printThread.isAlive()) {
+      return;
     }
+
+    setLoggingEnabled(true);
+    printThread =
+        new Thread(
+            () -> {
+              while (isLoggingEnabled()) {
+                try {
+                  logger.info("[{}][{}] GameState {}", type, playerNumber, getGameState());
+                  Thread.sleep(1000); // Sleep for 1 second
+                } catch (InterruptedException e) {
+                  logger.error("[{}][{}] Printing thread interrupted", type, playerNumber, e);
+                  Thread.currentThread().interrupt(); // Restore interrupted status
+                  break; // Exit the loop if the thread is interrupted
+                }
+              }
+            });
+    printThread.start();
   }
 
-  public synchronized void stopPrinting() {
-    setPrintingEnabled(false);
+  public synchronized void stopLogging() {
+    setLoggingEnabled(false);
+    if (printThread == null) {
+      return;
+    }
+
     // Optionally join the thread to ensure it has finished
-    if (printThread != null) {
-      try {
-        printThread.join(); // Wait for the printing thread to finish
-      } catch (InterruptedException e) {
-        logger.error("Interrupted while waiting for the printing thread to finish", e);
-        Thread.currentThread().interrupt(); // Restore interrupted status
-      }
+    try {
+      printThread.join(); // Wait for the printing thread to finish
+    } catch (InterruptedException e) {
+      logger.error("Interrupted while waiting for the printing thread to finish", e);
+      Thread.currentThread().interrupt(); // Restore interrupted status
     }
   }
 }
