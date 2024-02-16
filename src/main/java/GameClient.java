@@ -34,22 +34,38 @@ public class GameClient extends LoggableState implements StreamObserver<GameServ
   public void onError(Throwable t) {
     logger.error("[CLIENT][RECEIVE][{}] ERROR {}", playerNumber, t.toString());
     t.printStackTrace();
-    try {
-      shutdown();
-    } catch (InterruptedException e) {
-      logger.error("[CLIENT][EXCEPTION][{}] ERROR {}", playerNumber, e.toString());
-    }
+    //    try {
+    stop();
+    //    } catch (InterruptedException e) {
+    //      logger.error("[CLIENT][EXCEPTION][{}] ERROR {}", playerNumber, e.toString());
+    //    }
   }
 
   @Override
   public void onCompleted() {
     logger.info("[CLIENT][RECEIVE][{}] COMPLETED", playerNumber);
+    //    try {
+    stop();
+    logger.info("[CLIENT][{}] shutdown() success", playerNumber);
+    //    } catch (InterruptedException e) {
+    //      logger.error("[CLIENT][EXCEPTION][{}] ERROR {}", playerNumber, e.toString());
+    //      e.printStackTrace();
+    //    }
+  }
+
+  public void stop() {
+    setSendingMessages(false);
+    if (sendingThread == null) {
+      return;
+    }
+
+    // Optionally join the thread to ensure it has finished
     try {
-      shutdown();
-      logger.info("[CLIENT][{}] shutdown() success", playerNumber);
+      sendingThread.join(); // Wait for the printing thread to finish
+      channel.shutdown().awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS);
     } catch (InterruptedException e) {
-      logger.error("[CLIENT][EXCEPTION][{}] ERROR {}", playerNumber, e.toString());
-      e.printStackTrace();
+      logger.error("Interrupted while waiting for the printing thread to finish", e);
+      Thread.currentThread().interrupt(); // Restore interrupted status
     }
   }
 
@@ -96,24 +112,5 @@ public class GameClient extends LoggableState implements StreamObserver<GameServ
               }
             });
     sendingThread.start();
-  }
-
-  public void stop() {
-    setSendingMessages(false);
-    if (sendingThread == null) {
-      return;
-    }
-
-    // Optionally join the thread to ensure it has finished
-    try {
-      sendingThread.join(); // Wait for the printing thread to finish
-    } catch (InterruptedException e) {
-      logger.error("Interrupted while waiting for the printing thread to finish", e);
-      Thread.currentThread().interrupt(); // Restore interrupted status
-    }
-  }
-
-  public synchronized void shutdown() throws InterruptedException {
-    channel.shutdown().awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS);
   }
 }
