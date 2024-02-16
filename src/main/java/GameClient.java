@@ -34,23 +34,12 @@ public class GameClient extends LoggableState implements StreamObserver<GameServ
   public void onError(Throwable t) {
     logger.error("[CLIENT][RECEIVE][{}] ERROR {}", playerNumber, t.toString());
     t.printStackTrace();
-    //    try {
     stop();
-    //    } catch (InterruptedException e) {
-    //      logger.error("[CLIENT][EXCEPTION][{}] ERROR {}", playerNumber, e.toString());
-    //    }
   }
 
   @Override
   public void onCompleted() {
-    logger.info("[CLIENT][RECEIVE][{}] COMPLETED", playerNumber);
-    //    try {
-    stop();
-    logger.info("[CLIENT][{}] shutdown() success", playerNumber);
-    //    } catch (InterruptedException e) {
-    //      logger.error("[CLIENT][EXCEPTION][{}] ERROR {}", playerNumber, e.toString());
-    //      e.printStackTrace();
-    //    }
+    logger.info("[CLIENT][{}] onCompleted() success", playerNumber);
   }
 
   public void stop() {
@@ -61,8 +50,13 @@ public class GameClient extends LoggableState implements StreamObserver<GameServ
 
     // Optionally join the thread to ensure it has finished
     try {
-      sendingThread.join(); // Wait for the printing thread to finish
+      logger.info("[CLIENT][STOP][{}] about to call sendingThread.join()", playerNumber);
+      sendingThread.join(5000); // Wait for the printing thread to finish
+      logger.info("[CLIENT][STOP][{}] about to call channel.shutdown", playerNumber);
+      // send a close request from the client to the server to close the bi-directional stream
+      this.requestObserver.onCompleted();
       channel.shutdown().awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS);
+      logger.info("[CLIENT][STOP][{}] successfully stopped", playerNumber);
     } catch (InterruptedException e) {
       logger.error("Interrupted while waiting for the printing thread to finish", e);
       Thread.currentThread().interrupt(); // Restore interrupted status

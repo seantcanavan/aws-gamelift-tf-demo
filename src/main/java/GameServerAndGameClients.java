@@ -1,14 +1,15 @@
 import game.GameService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class GameServerAndGameClients {
-  public static final int MAX_PLAYERS = 2;
+  public static final int MAX_PLAYERS = 10;
   public static final int MAX_POS = 1000;
   private static final Logger logger = LoggerFactory.getLogger(GameServerAndGameClients.class);
   private static final Random random = new Random();
@@ -20,26 +21,26 @@ public class GameServerAndGameClients {
 
     try {
       gameServer.start();
-      //      gameServer.startLogging();
+      gameServer.startLogging();
       logger.info("Successfully started GameServer");
       for (int playerNumber = 1;
-          playerNumber <= GameServerAndGameClients.MAX_PLAYERS;
-          playerNumber++) {
+           playerNumber <= GameServerAndGameClients.MAX_PLAYERS;
+           playerNumber++) {
         logger.info(
             "Attempting to create {} of {} GameClient instances",
             playerNumber,
             GameServerAndGameClients.MAX_PLAYERS);
         GameClient newClient = new GameClient("localhost", GameServer.PORT, playerNumber);
-        // initialize logging the game state
-        //        newClient.startLogging();
-        // initialize sending of randomized local player state to the server
+        //         initialize logging the game state
+        newClient.startLogging();
+        //         initialize sending of randomized local player state to the server
         newClient.start();
         clientsMap.put(playerNumber, newClient);
       }
 
       long millis = 5000;
       logger.info("main is sleeping for {} millis", millis);
-      Thread.sleep(millis); // sleep for 30 seconds
+      Thread.sleep(millis); // sleep to let clients send messages
       logger.info("main is done sleeping for {} millis", millis);
       logger.info("clientsMap.keySet().size() {}", clientsMap.keySet().size());
       // Stop sending on all game clients and stop logging
@@ -54,7 +55,8 @@ public class GameServerAndGameClients {
                 currentClient.stopLogging();
                 logger.info("[CLIENT][STOP][{}] stopLogging() success", key);
               });
-      //      gameServer.stopLogging();
+      Thread.sleep(3000);
+      gameServer.stopLogging();
       gameServer.stop();
     } catch (InterruptedException | IOException e) {
       e.printStackTrace();
