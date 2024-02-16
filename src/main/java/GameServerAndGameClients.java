@@ -1,12 +1,11 @@
 import game.GameService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class GameServerAndGameClients {
   public static final int MAX_PLAYERS = 10;
@@ -22,10 +21,9 @@ public class GameServerAndGameClients {
     try {
       gameServer.start();
       gameServer.startLogging();
-      logger.info("Successfully started GameServer");
       for (int playerNumber = 1;
-           playerNumber <= GameServerAndGameClients.MAX_PLAYERS;
-           playerNumber++) {
+          playerNumber <= GameServerAndGameClients.MAX_PLAYERS;
+          playerNumber++) {
         logger.info(
             "Attempting to create {} of {} GameClient instances",
             playerNumber,
@@ -41,19 +39,14 @@ public class GameServerAndGameClients {
       long millis = 5000;
       logger.info("main is sleeping for {} millis", millis);
       Thread.sleep(millis); // sleep to let clients send messages
-      logger.info("main is done sleeping for {} millis", millis);
-      logger.info("clientsMap.keySet().size() {}", clientsMap.keySet().size());
       // Stop sending on all game clients and stop logging
       clientsMap
           .keySet()
           .forEach(
               key -> {
-                logger.info("[CLIENT][STOP][{}]", key);
                 GameClient currentClient = clientsMap.get(key);
                 currentClient.stop();
-                logger.info("[CLIENT][STOP][{}] stop() success", key);
                 currentClient.stopLogging();
-                logger.info("[CLIENT][STOP][{}] stopLogging() success", key);
               });
       Thread.sleep(3000);
       gameServer.stopLogging();
@@ -61,28 +54,6 @@ public class GameServerAndGameClients {
     } catch (InterruptedException | IOException e) {
       e.printStackTrace();
       System.err.println(e);
-    }
-
-    listAllThreads();
-    logger.info("end of main reached");
-  }
-
-  public static void listAllThreads() {
-    ThreadGroup root = Thread.currentThread().getThreadGroup().getParent();
-    while (root.getParent() != null) {
-      root = root.getParent();
-    }
-
-    Thread[] threads = new Thread[root.activeCount()];
-    while (root.enumerate(threads, true) == threads.length) {
-      threads = new Thread[threads.length * 2];
-    }
-
-    System.out.println("Active Threads:");
-    for (Thread t : threads) {
-      if (t != null) {
-        System.out.println("Thread name: " + t.getName() + " | State: " + t.getState());
-      }
     }
   }
 
